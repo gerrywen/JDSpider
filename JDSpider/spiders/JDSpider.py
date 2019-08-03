@@ -15,7 +15,6 @@ from scrapy.selector import Selector
 from scrapy.http import Request
 from JDSpider.items import *
 
-
 key_word = ['book', 'e', 'channel', 'mvd', 'list']
 Base_url = 'https://list.jd.com'
 price_url = 'https://p.3.cn/prices/mgets?skuIds=J_'
@@ -39,7 +38,8 @@ class JDSpider(Spider):
         """获取分类页"""
         selector = Selector(response)
         try:
-            texts = selector.xpath('//div[@class="category-item m"]/div[@class="mc"]/div[@class="items"]/dl/dd/a').extract()
+            texts = selector.xpath(
+                '//div[@class="category-item m"]/div[@class="mc"]/div[@class="items"]/dl/dd/a').extract()
             for text in texts:
                 items = re.findall(r'<a href="(.*?)" target="_blank">(.*?)</a>', text)
                 for item in items:
@@ -95,7 +95,8 @@ class JDSpider(Spider):
         shopItem['venderId'] = vender_id
         shopItem['url1'] = 'http://mall.jd.com/index-%s.html' % (shop_id)
         try:
-            shopItem['url2'] = 'https:' + response.xpath('//ul[@class="parameter2 p-parameter-list"]/li/a/@href').extract()[0]
+            shopItem['url2'] = 'https:' + \
+                               response.xpath('//ul[@class="parameter2 p-parameter-list"]/li/a/@href').extract()[0]
         except:
             shopItem['url2'] = shopItem['url1']
 
@@ -131,6 +132,42 @@ class JDSpider(Spider):
         product_id = response.url.split('/')[-1][:-5]
         productsItem['_id'] = product_id
         productsItem['url'] = response.url
+
+        # 商品介绍
+        product_info_list = response.xpath('//ul[@class="parameter2 p-parameter-list"]//li')
+        product_info = {}
+        try:
+            for li in product_info_list:
+                li_text = li.xpath('.//text()').extract()[0]
+                info_item = li_text.split("：", 1)
+                if info_item and len(info_item) >= 2:
+                    product_info[info_item[0]] = info_item[1]
+        except Exception as e:
+            pass
+
+        # 规格信息
+        ptable_list = response.xpath('//div[@class="Ptable-item"]')
+        spec_info = {}
+        try:
+            for item in ptable_list:
+                item_key = item.xpath('./h3//text()').extract()[0]
+                item_dt = item.xpath('./dl/dl/dt//text()').extract()
+                item_dd = item.xpath('./dl/dl//dd')
+                # 排除空格数据
+                for dd in item_dd:
+                    result = dd.xpath(".//text()").extract()
+                    if len(result) > 1:
+                        item_dd.remove(dd)
+                item_dd = item_dd.xpath(".//text()").extract()
+                spec_info1 = {}
+                for n in range(len(item_dt)):
+                    spec_info1[item_dt[n]] = item_dd[n]
+                spec_info[item_key] = spec_info1
+        except Exception as e:
+            pass
+
+        productsItem['productInfo'] = product_info
+        productsItem['specInfo'] = spec_info
 
         # description
         desc = response.xpath('//ul[@class="parameter2 p-parameter-list"]//text()').extract()
@@ -168,7 +205,8 @@ class JDSpider(Spider):
         data = dict()
         data['product_id'] = product_id
         yield productsItem
-        yield Request(url=comment_url % (product_id, '0'), callback=self.parse_comments, meta=data)
+        # 评论暂时关闭
+        # yield Request(url=comment_url % (product_id, '0'), callback=self.parse_comments, meta=data)
 
     def parse_comments(self, response):
         """获取商品comment"""
@@ -422,4 +460,3 @@ class JDSpider(Spider):
                     commentImageItem['imgTitle'] = image.get('imgTitle')
                     commentImageItem['isMain'] = image.get('isMain')
                     yield commentImageItem
-

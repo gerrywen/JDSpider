@@ -66,7 +66,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "JDSpider.pipelines.MongoDBPipeline": 403,
+    # "JDSpider.pipelines.MongoDBPipeline": 404,
+    'JDSpider.pipelines.ElasticsearchPipeline': 403
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

@@ -16,10 +16,10 @@ class MongoDBPipeline(object):
         self.Categories = db["Categories"]
         self.Products = db["Products"]
         self.Shop = db["Shop"]
-        self.Comment = db["Comment"]
-        self.CommentImage = db["CommentImage"]
-        self.CommentSummary = db["CommentSummary"]
-        self.HotCommentTag = db["HotCommentTag"]
+        # self.Comment = db["Comment"]
+        # self.CommentImage = db["CommentImage"]
+        # self.CommentSummary = db["CommentSummary"]
+        # self.HotCommentTag = db["HotCommentTag"]
 
     def process_item(self, item, spider):
         """ 判断item的类型，并作相应的处理，再入数据库 """
@@ -38,24 +38,40 @@ class MongoDBPipeline(object):
                 self.Shop.insert(dict(item))
             except Exception:
                 pass
-        elif isinstance(item, CommentItem):
+        # elif isinstance(item, CommentItem):
+        #     try:
+        #         self.Comment.insert(dict(item))
+        #     except Exception:
+        #         pass
+        # elif isinstance(item, CommentImageItem):
+        #     try:
+        #         self.CommentImage.insert(dict(item))
+        #     except Exception:
+        #         pass
+        # elif isinstance(item, CommentSummaryItem):
+        #     try:
+        #         self.CommentSummary.insert(dict(item))
+        #     except Exception:
+        #         pass
+        # elif isinstance(item, HotCommentTagItem):
+        #     try:
+        #         self.HotCommentTag.insert(dict(item))
+        #     except Exception:
+        #         pass
+        return item
+
+
+class ElasticsearchPipeline(object):
+    """ 判断item的类型，并作相应的处理，再将数据写入到es中 """
+
+    # def __init__(self):
+    #     pass
+
+    def process_item(self, item, spider):
+        # 将item转换为es的数据
+        if isinstance(item, ProductsItem):
             try:
-                self.Comment.insert(dict(item))
-            except Exception:
-                pass
-        elif isinstance(item, CommentImageItem):
-            try:
-                self.CommentImage.insert(dict(item))
-            except Exception:
-                pass
-        elif isinstance(item, CommentSummaryItem):
-            try:
-                self.CommentSummary.insert(dict(item))
-            except Exception:
-                pass
-        elif isinstance(item, HotCommentTagItem):
-            try:
-                self.HotCommentTag.insert(dict(item))
+                item.save_to_es()
             except Exception:
                 pass
         return item
